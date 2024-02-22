@@ -1,4 +1,4 @@
-# templates/spa
+# templates/spa with Tailwindcss and daisyUI
 
 This template leverages [Remix SPA Mode](https://remix.run/docs/en/main/future/spa-mode) to build your app as a Single-Page Application using [Client Data](https://remix.run/docs/en/main/guides/client-data) for all of you data loads and mutations.
 
@@ -11,7 +11,8 @@ Tailwind and daisyUI has been added to the template.
 ## Setup
 
 ```shellscript
-npx create-remix@latest --template remix-run/remix/templates/spa
+create-remix@latest --debug --template ugmurthy/remix-spa
+
 ```
 
 ## Development
