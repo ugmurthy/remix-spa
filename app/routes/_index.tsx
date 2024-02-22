@@ -9,8 +9,8 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <h1>Welcome to Remix (SPA Mode)</h1>
+    <div className="p-10 flex flex-col items-center ">
+      <h1 className="text-2xl text-blue-700">Welcome to Remix (SPA Mode)</h1>
       <ul>
         <li>
           <a
@@ -27,6 +27,16 @@ export default function Index() {
           </a>
         </li>
       </ul>
+      <div className="card w-96 bg-base-100 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title text-2xl">A Starter Repo for your SPA</h2>
+              <p>Repo is preconfigured to use 
+                <a className='underline text-blue-400' href='https://tailwindcss.com/' rel="noreferer"> tailwindcss</a> and 
+                <a className="underline text-blue-400" href="https://daisyui.com/" rel="noreferer"> daisyUI</a></p>
+          </div>
+          <figure><img src="https://remix.run/img/og.1.jpg" alt="REMIX" /></figure>
+      </div>
+      
     </div>
   );
 }
