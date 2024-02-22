@@ -6,6 +6,8 @@ This template leverages [Remix SPA Mode](https://remix.run/docs/en/main/future/s
 
 📖 See the [Remix Vite docs][remix-vite-docs] for details on supported features.
 
+Tailwind and daisyUI has been added to the template.
+
 ## Setup
 
 ```shellscript
