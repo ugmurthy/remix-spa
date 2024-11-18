@@ -2,21 +2,27 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Mic, Square, Trash } from 'lucide-react';
 import {createMicrophone} from '../modules/microphone'
 
+import WordDisplay from './WordsDisplay';
+import ShowData from './ShowData'
 
 const AudioAssembly = ({url}) => {
-
+    const samples=false;
     const [messages, setMessages] = useState([]);
     //const [inputMessage, setInputMessage] = useState("");
     const wsRef = useRef(null); //  persist WebSocket instance
-    const isOPEN = wsRef.current && wsRef.current.readyState === WebSocket.OPEN
+    const [isOPEN,setIsOPEN] = useState(false)
+    //const isOPEN = wsRef.current && wsRef.current.readyState === WebSocket.OPEN
     const terminate = {"terminate_session": true};
     const [isRecording, setIsRecording] = useState(false);
     const [audioSamples, setAudioSamples] = useState([]);
     const [microphone, setMicrophone] = useState(null);
     const [error, setError] = useState(null);
-
+    const containerRef = useRef();
+    const isConnecting = !isOPEN && !isRecording && messages.length === 0;
+    const reConnect = !isOPEN && !isRecording && messages.length > 0;
 ///
 useEffect(() => {
+    let dataJSON={}
     if (!url) {
       console.error("WebSocket URL is required");
       return;
@@ -26,11 +32,19 @@ useEffect(() => {
     wsRef.current = ws;
 
     ws.onopen = () => {
+        setIsOPEN(true);
       console.log("WebSocket connection established");
     };
 
+
     ws.onmessage = (event) => {
-      setMessages((prevMessages) => [...prevMessages, event.data]);
+      try {
+        dataJSON = JSON.parse(event.data);
+         }
+      catch{
+        console.error("Error parsing JSON:", error);
+      }
+      setMessages((prevMessages) => [...prevMessages, dataJSON]);
     };
 
     ws.onerror = (error) => {
@@ -38,6 +52,7 @@ useEffect(() => {
     };
 
     ws.onclose = () => {
+      setIsOPEN(false);
       console.log("WebSocket connection closed");
     };
 
@@ -71,9 +86,16 @@ useEffect(() => {
         mic.stopRecording();
         // send {"terminate_session":true} to socket connection
         sendMessage(JSON.stringify(terminate));
+        setIsOPEN(false); // connection will be closed by assembly.ai
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [messages.length]); // Re-run effect whenever 'texts' changes
 
   const handleStartRecording = useCallback(async () => {
     try {
@@ -100,45 +122,48 @@ useEffect(() => {
       setIsRecording(false);
       //  send {"terminate_session":true} to socket connection
       sendMessage(JSON.stringify(terminate));
+      setIsOPEN(false); // connection will be closed by assembly.ai
     }
   }, [microphone]);
 
   const clearSamples = useCallback(() => {
-    setAudioSamples([]);
+    //setAudioSamples([]);
+    //setMessages([]);
+    //wsRef.current.close(); // close socket connection
+    document.location.reload();
   }, []);
+ // <div className="card w-full max-w-2xl mx-auto bg-base-100 shadow-xl"></div>
 
+ console.log("AudioAssembly : ",isOPEN, isRecording, (!isOPEN && !isRecording));
   return (
-    <div className="card w-full max-w-2xl mx-auto bg-base-100 shadow-xl">
+    <div className="flex flex-col justify-center w-full max-w-6xl mx-auto bg-base-100 shadow-xl">
       <div className="card-body">
-        <h2 className="card-title text-2xl font-bold mb-6">Audio Transcript</h2>
-        
-        <div className="flex gap-4 mb-6">
-          <button 
-            className={`btn btn-lg gap-2 ${isRecording ? 'btn-error' : 'btn-primary'}`}
-            onClick={isRecording ? handleStopRecording : handleStartRecording}
-            disabled={!isOPEN}
-          >
-            {isRecording ? (
-              <>
-                <Square className="w-5 h-5" />
-                Stop Recording
-              </>
-            ) : (
-              <>
-                <Mic className="w-5 h-5" />
-                Start Recording
-              </>
-            )}
-          </button>
-          
-          <button 
-            className="btn btn-lg btn-outline gap-2"
-            onClick={clearSamples}
-            disabled={isRecording || messages.length === 0}
-          >
-            <Trash className="w-5 h-5" />
-            Clear Samples
-          </button>
+        <div className="rounded-t-lg  w-full h-48 bg-cover bg-center bg-no-repeat bg-opacity-80" style={{"backgroundImage": "url('/bg.webp')"}}>
+
+        <h2 className="pt-20 text-center  text-6xl text-gray-50 font-bold mb-6">SpeechScope</h2>
+        </div>
+    </div>
+       
+        <div className="flex flex-col items-center gap-6">
+            <button
+                        onClick={isRecording ? handleStopRecording : handleStartRecording}
+                        disabled={isConnecting}
+                        className={`btn btn-circle btn-lg ${
+                            isRecording ? 'btn-error' : 'btn-primary'
+                        } ${isConnecting ? 'loading' : ''}`}
+                        >
+                        {!isConnecting && (
+                            <span className="text-2xl">
+                            {isRecording ? '◼' : '●'}
+                            </span>
+                        )}
+            </button>
+            {reConnect?<button onClick={clearSamples} className="btn btn-link  btn-accent">ReConnect</button>:""}
+               {/*STATUS */}
+               <div className='flex space-x-2 items-center'>
+            <span className="badge badge-primary badge-sm">{messages.length}</span>
+            { (!isOPEN && !isRecording) ? <span className="badge badge-sm badge-accent">Disconnected</span> : <span className="badge badge-sm badge-secondary">Connected</span> }
+            </div>
         </div>
 
         {error && (
@@ -152,27 +177,40 @@ useEffect(() => {
 
         <div className="space-y-4">
           <div className="text-lg font-semibold flex items-center gap-2">
-            <span> Samples:</span>
-            <div className="badge badge-primary badge-lg">{messages.length}</div>
+         
           </div>
-          
-          <div className="max-h-96 overflow-y-auto rounded-box border border-base-300">
+          <div ref={containerRef} className="p-4 max-h-96 overflow-y-auto rounded-box border border-base-300">
             {messages.length === 0 ? (
               <div className="p-8 text-center text-base-content/60">
                 Click &quot Start Recording &quot to begin.
               </div>
             ) : (
                 <ul>
-                {messages.map((message, index) => (
-                  <li key={index}>{message}</li>
-                ))}
+                {<ShowData data={messages} label="Messages"></ShowData>}
+                { !samples &&
+                messages.map((message, index) => (
+                    <li key={index}>
+                        <WordDisplay  words={message.words}/>    
+                     </li>
+  
+                  ))
+                }
+                
               </ul>
             )}
           </div>
+
         </div>
       </div>
-    </div>
+    
   );
 };
 
 export default AudioAssembly;
+
+
+/*
+{samples &&  messages.map((message, index) => (
+                  <li className="font-semibold font-mono text-xs" key={index}>{JSON.stringify(message)}</li>
+                ))}
+*/
