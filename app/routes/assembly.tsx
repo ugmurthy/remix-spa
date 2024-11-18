@@ -12,7 +12,7 @@ import AudioAssembly from "~/components/AudioAssembly";
 // @TODO fetch token from assembly AI using clientLoader and clieantLoader
 export default function Assembly() {
 //const token = useLoaderData();
-const token="28f764096bdd74d482f8e5e638c3ca8fdbc82f62ce953e75262b86347336c1da"
+const token="46ac8dac5825c032e3ef96dca58eb884db6992d2ade503c41307b537fbcce160"
 console.log(token);
     let url = 'wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000';
 

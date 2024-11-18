@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Mic, Square, Trash } from 'lucide-react';
 import {createMicrophone} from '../modules/microphone'
-
+import {analysePartial,analyseTranscriptionForPauses, analyseAllData} from '../modules/evalspeech'
 import WordDisplay from './WordsDisplay';
 import ShowData from './ShowData'
 
@@ -18,9 +17,9 @@ const AudioAssembly = ({url}) => {
     const [microphone, setMicrophone] = useState(null);
     const [error, setError] = useState(null);
     const containerRef = useRef();
-    const isConnecting = !isOPEN && !isRecording && messages.length === 0;
-    const reConnect = !isOPEN && !isRecording && messages.length > 0;
-///
+    const isConnecting = !error && !isOPEN && !isRecording && messages.length === 0;
+    const reConnect =error || ( !isOPEN && !isRecording && messages.length  > 0);
+/// WebSockets useEffet
 useEffect(() => {
     let dataJSON={}
     if (!url) {
@@ -43,6 +42,11 @@ useEffect(() => {
          }
       catch{
         console.error("Error parsing JSON:", error);
+      }
+      if (Object.keys(dataJSON).includes("error")) {
+        setError(dataJSON.error);
+        console.error("Error from WebSocket:", dataJSON.error);
+        return;
       }
       setMessages((prevMessages) => [...prevMessages, dataJSON]);
     };
@@ -76,7 +80,7 @@ useEffect(() => {
 ///
 
 
-
+  /// Microphone useEffect: stream audio to Assembly.ai
   useEffect(() => {
     const mic = createMicrophone();
     setMicrophone(mic);
@@ -90,7 +94,8 @@ useEffect(() => {
       }
     };
   }, []);
-
+  
+  ///Scrollbottom useEffect: Ensure we are always on the last line of the transcription
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
@@ -127,27 +132,28 @@ useEffect(() => {
   }, [microphone]);
 
   const clearSamples = useCallback(() => {
-    //setAudioSamples([]);
-    //setMessages([]);
-    //wsRef.current.close(); // close socket connection
     document.location.reload();
   }, []);
- // <div className="card w-full max-w-2xl mx-auto bg-base-100 shadow-xl"></div>
+  
+  const result =  analyseAllData(messages);
+  const duration = Math.floor(result[2]*60)+ " s"
+  const wpm = result[3]+ " wpm"
+  const ida = result[0]
 
- console.log("AudioAssembly : ",isOPEN, isRecording, (!isOPEN && !isRecording));
+  console.log("Result :",ida);
   return (
     <div className="flex flex-col justify-center w-full max-w-6xl mx-auto bg-base-100 shadow-xl">
       <div className="card-body">
-        <div className="rounded-t-lg  w-full h-48 bg-cover bg-center bg-no-repeat bg-opacity-80" style={{"backgroundImage": "url('/bg.webp')"}}>
+        <div className="rounded-t-lg  w-full h-48 bg-cover bg-center bg-no-repeat bg-opacity-80" style={{"backgroundImage": ""}}>
 
-        <h2 className="pt-20 text-center  text-6xl text-gray-50 font-bold mb-6">SpeechScope</h2>
+        <h2 className="pt-20 text-center  text-6xl text-blue-300 font-bold mb-6">SpeechMirror</h2>
         </div>
     </div>
        
         <div className="flex flex-col items-center gap-6">
             <button
                         onClick={isRecording ? handleStopRecording : handleStartRecording}
-                        disabled={isConnecting}
+                        disabled={isConnecting || error}
                         className={`btn btn-circle btn-lg ${
                             isRecording ? 'btn-error' : 'btn-primary'
                         } ${isConnecting ? 'loading' : ''}`}
@@ -164,14 +170,16 @@ useEffect(() => {
             <span className="badge badge-primary badge-sm">{messages.length}</span>
             { (!isOPEN && !isRecording) ? <span className="badge badge-sm badge-accent">Disconnected</span> : <span className="badge badge-sm badge-secondary">Connected</span> }
             </div>
+            {messages.length > 0 && isRecording ?
+            <><span className='badge badge-neutral badge-sm'>{wpm}</span>
+            <span className='badge badge-neutral badge-sm'>{duration}</span></>
+            :""}
         </div>
 
         {error && (
-          <div className="alert alert-error mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{error}</span>
+          <div className="p-4 text-center">
+            
+            <span className='text-red-400 font-bold'>{error}</span>
           </div>
         )}
 
@@ -188,9 +196,9 @@ useEffect(() => {
                 <ul>
                 {<ShowData data={messages} label="Messages"></ShowData>}
                 { !samples &&
-                messages.map((message, index) => (
+                ida.map((ary_id, index) => (
                     <li key={index}>
-                        <WordDisplay  words={message.words}/>    
+                        <WordDisplay  words={messages[ary_id[0]].words}/>    
                      </li>
   
                   ))
@@ -213,4 +221,11 @@ export default AudioAssembly;
 {samples &&  messages.map((message, index) => (
                   <li className="font-semibold font-mono text-xs" key={index}>{JSON.stringify(message)}</li>
                 ))}
+
+
+messages.map((message, index) => (
+                    <li key={index}>
+                        <WordDisplay  words={message.words}/>    
+                     </li>
+
 */

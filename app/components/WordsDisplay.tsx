@@ -1,5 +1,5 @@
 const WordDisplay = ({ words }) => {
-    console.log("WordsDisplay ",words)
+    //console.log("WordsDisplay ",words)
     if (!words || words.length === 0) {
        return <div></div>
      }

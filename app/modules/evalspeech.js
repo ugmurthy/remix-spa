@@ -8,27 +8,34 @@ export function analysePartial(partial) {
     }
     const start = partial.audio_start
     const end = partial.audio_end
-    const duration = (end-start)/1000/60; // minutes
+    const duration = (end-start)
     const wc = partial.text.trim().split(/\s+/).length;
-    const wpm = Math.floor(wc/duration);
+    const wpm = Math.floor(wc/(duration/1000/60)); // words/minute);
     return {duration,wc,wpm}
 }
-export function clean(data) {
 
-    let text={};
+// clean up the transcript data
+// looks only at Partial transcripts
+// return 2 arrays and a duration and words per minute
+// 1. array of two elments [index,start_time]
+// 2. array of word counts per line of text
+// 3. duration of the transcript in minutes
+// 4. wordsper minute
+// [ida,wc,duration,wpm]
+export function analyseAllData(data,msgIncludes="Partial") {
     let idx={}
     let wc=0;
     for (let i=0;i<data.length;i++) {
         const msgType = data[i]["message_type"]
-        if (msgType.includes("Partial")) {
+        if (msgType.includes(msgIncludes)) {
             var start = data[i]["audio_start"]
-            // var t = data[i]["text"]
-            // if (msgType.includes("Final")) {
-            //     wc = wc+t.trim().split(/\s+/).length;
-            // }
             idx[start]=i
         }
     }
+    if (Object.keys(idx).length===0){
+          console.log("No partial transcripts found");
+          return [[],[],0]
+        }
     const ida=[];
     _.forEach(idx, (value, key) => {ida.push([value,key])});
 
@@ -38,7 +45,9 @@ export function clean(data) {
     // get word count per line of text
     // if text is '' then it returns a 1 : TO FIX later
     wc=ida.map((i)=>data[i[0]].text.trim().split(/\s+/).length)
-    return [text,ida,wc,duration]
+    const tot_wc = _.sum(wc); // total word count
+    const wpm = Math.floor(tot_wc/duration); // words/minute
+    return [ida,wc,duration,wpm]
 }
 
 // one transcription corresponds to an array of words from
@@ -96,18 +105,4 @@ export function analyseTranscriptionForPauses(wordArray, pauseThreshold = 500) {
   
     return { wordConfidences, pauses, insights: insights.join(" ") };
   }
-  
-  // Example JSON input
-  const transcription = [
-    { text: "Hello", start: 0.0, stop: 0.5, confidence: 0.95 },
-    { text: "world", start: 1.0, stop: 1.5, confidence: 0.92 },
-    { text: "this", start: 2.0, stop: 2.4, confidence: 0.90 },
-    { text: "is", start: 3.5, stop: 3.7, confidence: 0.88 },
-    { text: "a", start: 4.0, stop: 4.1, confidence: 0.85 },
-    { text: "test", start: 5.5, stop: 6.0, confidence: 0.93 },
-  ];
-  
-  // Usage
-  const result = analyseTranscriptionForPauses(transcription, 0.5);
-  console.log(result);
   
