@@ -1,11 +1,10 @@
 import { Download } from 'lucide-react';
-import { combineAudioChunks } from '~/modules/audioProcessor';
 
-const AudioDownloader = ({ audioBlob, fileName = 'audio-recording.webm' }) => {
+const AudioDownloader = ({ audioBlob, fileName }) => {
     const handleDownload = () => {
     
      // const audioBlob = combineAudioChunks(audioChunks);
-
+    //const fileName = 'audio.wav';
     const url = URL.createObjectURL(audioBlob);
     // Create a temporary anchor element
     const a = document.createElement('a');
@@ -26,7 +25,6 @@ const AudioDownloader = ({ audioBlob, fileName = 'audio-recording.webm' }) => {
       <div className="card-body items-center text-center">
         <h2 className="card-title">Audio Player</h2>
         
-        {/* Audio Preview */}
         <div className="w-full my-4">
           <audio 
             controls 
@@ -35,12 +33,10 @@ const AudioDownloader = ({ audioBlob, fileName = 'audio-recording.webm' }) => {
           />
         </div>
         
-        {/* File Info */}
         <div className="text-sm text-base-content/70 mb-4">
           {fileName}
         </div>
         
-        {/* Download Button */}
         <div className="card-actions">
           <button
             onClick={handleDownload}

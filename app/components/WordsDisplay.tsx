@@ -4,7 +4,7 @@ const WordDisplay = ({ words }) => {
        return <div></div>
      }
     return (
-      <div>
+      <div className='flex flex-wrap ' >
         {words?.map((words, index) => (
           <span
             key={index}
@@ -21,13 +21,13 @@ const WordDisplay = ({ words }) => {
     let classes = '';
   
     if (confidence >= 0.9) {
-      classes += 'text-green-500 font-bold';
+      classes += 'text-green-500 font-bold ';
     } else if (confidence >= 0.7) {
       classes += 'text-blue-500';
     } else if (confidence >= 0.5) {
       classes += 'text-orange-500';
     } else {
-      classes += 'text-red-500';
+      classes += 'text-red-500 font-semibold';
     }
   
     return classes;
